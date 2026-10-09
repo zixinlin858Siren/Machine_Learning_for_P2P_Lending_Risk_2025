@@ -1,0 +1,371 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Import data set
+```{r}
+library(readxl)
+lending_club_loan <- read_excel("lending_club_loan_two.xlsx")
+View(lending_club_loan)
+```
+
+Name all variables
+# Loan status : 0 represents Charged Off
+#               1 represents Fully Paid
+```{r}
+amnt <- lending_club_loan$loan_amnt            # Numerical
+term <- lending_club_loan$`term(months)`       # Classical
+int <- lending_club_loan$`int_rate(%)`         # Numerical
+intallment <- lending_club_loan$installment    # Numerical
+grade <- lending_club_loan$grade               # Classical
+subgrade <- lending_club_loan$sub_grade        # Classical
+emplength <- lending_club_loan$`emp_length(years)`   # Numerical
+inc <- lending_club_loan$annual_inc                  # Numerical
+veri <- lending_club_loan$verification_status        # Classical
+status <- lending_club_loan$loan_status              # Classical(Response variable)
+
+
+loan_to_income <- amnt / (inc + 1)
+installment_to_income <- lending_club_loan$installment / ((inc / 12) + 1)
+```
+
+Change the format of "emp_length(years)"
+```{r}
+library(tidyverse)
+```
+# 步骤 1 & 2: 选择原始工龄列并确保是字符串 (R 中数据框列通常已经是合适的类型)
+# 步骤 3: 去除非数字字符
+# 步骤 4: 把空字符串变成 '0'
+# 步骤 5: 转换成浮点数 (R 中的 numeric 类型)
+
+# Steps 1 & 2: Select the original seniority column and ensure it is a string (dataframe columns in R are usually already of the appropriate type)
+
+# Step 3: Remove non-numeric characters
+
+# Step 4: Convert empty strings to '0'
+
+# Step 5: Convert to floating-point number (numeric type in R)
+```{r}
+clean <- lending_club_loan %>%
+  
+  # Python: .str.replace(r'[^0-9]', '', regex=True)
+  # R: stringr::str_replace_all()
+  mutate(emplength_clean = str_replace_all(
+    string = as.character(emplength), # 确保是字符串
+    pattern = "[^0-9]",                      # 正则表达式：匹配非数字字符
+    replacement = ""                         # 替换成空字符串
+  )) %>%
+  # Python: .replace('', '0')
+  # R: ifelse() 或 dplyr::na_if() 配合 mutate
+  mutate(emplength_clean = ifelse(
+    emplength_clean == "",
+    "0",
+    emplength_clean
+  )) %>%
+  # Python: .astype(float)
+  # R: as.numeric()
+  mutate(emplength_clean = as.numeric(emplength_clean))
+```
+
+```{r}
+# 1. 打印标题
+cat("--- 雇佣年限清洗结果验证 ---\n")
+
+# 2. 打印 emp_length_years 和 emp_length_clean 这两列的前 10 行
+# Python: print(df[['emp_length(years)', 'emplength_clean']].head(10))
+clean %>%
+  select(`emp_length(years)`, emplength_clean)%>%
+  head(10)
+
+# 3. 打印清洗后列的数据类型
+# Python: print(f"\n清洗后的 'emp_length_clean' 列的数据类型是: {df['emp_length_clean'].dtype}")
+cat("\n清洗后的 'emplength_clean' 列的数据类型是:",
+    class(clean$emplength_clean),
+    "\n")
+
+
+# --- 打印完整的 DataFrame (包括 emp_length_clean) ---
+
+# 4. 打印完整数据框的前 5 行
+# Python: print(df.head(5))
+cat("--- 完整的 DataFrame (包括 emp_length_clean) ---\n")
+clean %>%
+  head(5)
+```
+
+Plot gg-plot
+```{r}
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = `int_rate(%)`)) +
+  geom_boxplot() +
+  
+  coord_cartesian(ylim = c(7, 20)) +
+
+  geom_boxplot(fill = "skyblue", 
+               color = "darkblue", # 设置边框为深蓝色
+               alpha = 0.8) +
+  
+  labs(
+    title = "Relationship between status and int_rate",
+    x = "status",
+    y = "int_rate"
+  )
+```
+```{r}
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = `loan_to_income`)) +
+  geom_boxplot() +
+  
+  coord_cartesian(ylim = c(0, 0.5)) +
+
+  geom_boxplot(fill = "skyblue", 
+               color = "darkblue", # 设置边框为深蓝色
+               alpha = 0.8) +
+  
+  labs(
+    title = "Relationship between status and loan_to_income",
+    x = "status",
+    y = "loan_to_income"
+  )
+```
+```{r}
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = `installment_to_income`)) +
+  geom_boxplot() +
+  
+  coord_cartesian(ylim = c(0, 0.15)) +
+
+  geom_boxplot(fill = "skyblue", 
+               color = "darkblue", # 设置边框为深蓝色
+               alpha = 0.8) +
+  
+  labs(
+    title = "Relationship between status and installment_to_income",
+    x = "status",
+    y = "installment_to_income"
+  )
+```
+
+
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = installment)) +
+  geom_boxplot() +
+
+  geom_boxplot(fill = "skyblue", 
+               color = "darkblue", # 设置边框为深蓝色
+               alpha = 0.8) +
+  
+  labs(
+    title = "Relationship between status and installment",
+    x = "status",
+    y = "installment"
+  )
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = annual_inc)) +
+  geom_boxplot() +
+
+  # 关键改进：使用小提琴图显示完整分布
+  geom_violin(trim = FALSE, alpha = 0.7) + 
+  
+  # 强烈建议：同时进行对数缩放，让小提琴的形状更清晰
+  scale_y_continuous(
+    trans = "log",           # 指定使用自然对数变换
+    labels = scales::comma,  # 保持标签易读
+    name = "Annual Income(Natural logarithmic scale)" # 修改轴标签
+  ) +
+  
+  geom_boxplot(
+    fill = "skyblue",  
+    color = "navy"
+  ) +
+  
+labs(
+    title = "Loan status and annual income distribution (logarithmic operation on annual income)",
+    x = "status",
+    fill = "贷款状态"
+  ) 
+  
+  theme_minimal()
+```
+
+```{r}
+installmentratio <- clean$installment / ((clean$annual_inc / 12) + 1)
+summary(installmentratio)
+```
+
+
+
+```{r}
+installmentratio <- clean$installment / ((clean$annual_inc / 12) + 1)
+
+library(ggplot2)
+
+ggplot(clean, aes(x = loan_status, y = installmentratio)) +
+  geom_boxplot() +
+  
+  coord_cartesian(ylim = c(0, 0.2)) +
+
+  geom_boxplot(fill = "skyblue", 
+               color = "darkblue", # 设置边框为深蓝色
+               alpha = 0.8) +
+  
+  labs(
+    title = "Relationship between status and installment ratio",
+    x = "status",
+    y = "installment ratio"
+  )
+```
+
+
+
+
+
+
+
+
+Explanatory Data
+
+###### Numerical variables ######
+```{r}
+library(psych)
+
+ex_num <- clean %>%
+  select(loan_amnt, 
+         `int_rate(%)`, 
+         installment, 
+         `emplength_clean`, 
+         `annual_inc`)
+
+describe(ex_num)
+```
+
+Variance
+```{r}
+var(clean$loan_amnt, na.rm = TRUE)
+var(clean$`int_rate(%)`, na.rm = TRUE)
+var(clean$installment, na.rm = TRUE)
+var(clean$`emplength_clean`, na.rm = TRUE)
+var(clean$annual_inc, na.rm = TRUE)
+```
+
+
+
+###### Catagorical Variables ######
+```{r}
+# 1. 计算频数 (Count)
+counts <- table(clean$`term(months)`)
+print(counts)
+
+# 2. 计算比例 (Proportion)
+proportions <- prop.table(counts)
+print(proportions)
+
+# 3. 计算百分比
+percentages <- proportions * 100
+print(percentages)
+```
+```{r}
+# 1. 计算频数 (Count)
+counts <- table(clean$grade)
+print(counts)
+
+# 2. 计算比例 (Proportion)
+proportions <- prop.table(counts)
+print(proportions)
+
+# 3. 计算百分比
+percentages <- proportions * 100
+print(percentages)
+```
+```{r}
+# 1. 计算频数 (Count)
+counts <- table(clean$sub_grade)
+print(counts)
+
+# 2. 计算比例 (Proportion)
+proportions <- prop.table(counts)
+print(proportions)
+
+# 3. 计算百分比
+percentages <- proportions * 100
+print(percentages)
+```
+```{r}
+# 1. 计算频数 (Count)
+counts <- table(clean$verification_status)
+print(counts)
+
+# 2. 计算比例 (Proportion)
+proportions <- prop.table(counts)
+print(proportions)
+
+# 3. 计算百分比
+percentages <- proportions * 100
+print(percentages)
+```
+
+```{r}
+# 1. 计算频数 (Count)
+counts <- table(clean$loan_status)
+print(counts)
+
+# 2. 计算比例 (Proportion)
+proportions <- prop.table(counts)
+print(proportions)
+
+# 3. 计算百分比
+percentages <- proportions * 100
+print(percentages)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
