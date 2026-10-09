@@ -1,0 +1,13 @@
+Machine Learning for P2P Lending Risk
+A machine learning pipeline for credit-risk scoring and default prediction on large-scale P2P lending data.
+
+Project Overview
+This project focuses on assessing credit risk in peer-to-peer (P2P) lending platforms. 
+As a group project, I led the data preparation and core predictive modeling phases, building robust algorithms to identify potential borrower defaults and support risk-management decisions.
+
+Key Responsibilities & Contributions
+Data Preprocessing & Feature Engineering: Handled large-scale lending datasets, performed data cleaning, addressed missing values, and engineered predictive features relevant to credit scoring.
+
+Model Development: Designed and trained credit-risk scoring and default-prediction models using advanced machine learning algorithms, specifically LightGBM and Random Forest.
+
+Optimization & Evaluation: Conducted rigorous hyperparameter tuning to optimize model performance and performed feature-importance analysis to interpret risk drivers.
